@@ -1,3 +1,34 @@
+<template>
+  <div class="delete-container">
+    <h1>Delete Order</h1>
+
+    <router-link class="btn-back" to="/orders">← Back to Orders</router-link>
+
+    <div class="delete-box" v-if="order.id">
+      <h3>Are you sure you want to delete this order?</h3>
+
+      <ul>
+        <li><strong>Order ID:</strong> {{ order.id }}</li>
+        <li><strong>Order Total:</strong> {{ order.order_total }}</li>
+        <li><strong>Customer Name:</strong> {{ order.customer?.name || 'N/A' }}</li>
+      </ul>
+
+      <h4>Products:</h4>
+      <ul>
+        <li v-for="(item, index) in order.order_details" :key="index">
+          {{ item.product?.name || 'Unknown Product' }} - Qty: {{ item.qty }} - Price: {{ item.price }}
+        </li>
+      </ul>
+
+      <button class="btn-delete" @click="handleDelete">Confirm Delete</button>
+    </div>
+
+    <div v-else>
+      Loading order data...
+    </div>
+  </div>
+</template>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -7,7 +38,6 @@ const route = useRoute()
 const orderId = route.params.id
 
 const order = ref({})
-const customer = ref({})
 
 const baseUrl = `http://anayet.intelsofts.com/project_app/public/api/`
 const endpoint = `orders/${orderId}`
@@ -15,7 +45,7 @@ const endpoint = `orders/${orderId}`
 async function handleDelete() {
   if (confirm('Are you sure you want to delete this order?')) {
     try {
-      await fetch(`${baseUrl}${endpoint}`, {
+      const res = await fetch(`${baseUrl}${endpoint}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -23,9 +53,16 @@ async function handleDelete() {
         },
       })
 
-      router.push('/orders')
+      if (res.ok) {
+        alert('Order deleted successfully.')
+        router.push('/orders')
+      } else {
+        const data = await res.json()
+        alert('Delete failed: ' + (data.message || 'Unknown error'))
+      }
     } catch (err) {
-      console.error('Fetch Error:', err)
+      alert('Error deleting order: ' + err.message)
+      console.error(err)
     }
   }
 }
@@ -40,38 +77,21 @@ onMounted(async () => {
       },
     })
 
-    const c = await response.json()
-    console.log('API Response:', c)
-
-    order.value = c.orders ?? {}
- 
+    if (response.ok) {
+      const data = await response.json()
+      order.value = data.order ?? {}
+      console.log('Order:', order.value)
+    } else {
+      alert('Failed to load order data')
+      router.push('/orders')
+    }
   } catch (err) {
-    console.error('Fetch Error:', err)
+    alert('Error fetching order data: ' + err.message)
+    router.push('/orders')
   }
 })
 </script>
 
-
-
-<template>
-  <div class="delete-container">
-    <h1>Delete Order</h1>
-
-    <router-link class="btn-back" to="/orders">← Back to Orders</router-link>
-
-    <div class="delete-box">
-      <h3>Are you sure you want to delete this order?</h3>
-
-      <ul>
-        <li><strong>Order ID:</strong> {{ order.id }}</li>
-        <li><strong>Order Total:</strong> {{ order.order_total }}</li>
-        <li><strong>Customer Name:</strong> {{ customer.name }}</li>
-      </ul>
-
-      <button class="btn-delete" @click="handleDelete">Confirm Delete</button>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .delete-container {

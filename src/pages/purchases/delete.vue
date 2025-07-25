@@ -1,36 +1,37 @@
 <script setup>
 import { ref, onMounted } from 'vue' 
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router'
 
-const router = useRouter();
-const route = useRoute();
-const purchaseId = route.params.id;
+const router = useRouter()
+const route = useRoute()
+const purchaseId = route.params.id
 
-const purchase = ref({});
-const baseUrl = `http://anayet.intelsofts.com/project_app/public/api/`;
-const endpoint = `purchases/${purchaseId}`;
+const purchase = ref({})
+const baseUrl = `http://anayet.intelsofts.com/project_app/public/api/`
+const endpoint = `purchases/${purchaseId}`
 
 async function handleDelete() {
-  if (confirm("Are you sure?")) {
+  if (confirm("Are you sure you want to delete this purchase?")) {
     try {
       const response = await fetch(`${baseUrl}${endpoint}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
-      });
+      })
+
+      console.log('Delete response:', response.status)
 
       if (!response.ok) {
-        alert("Delete failed!");
-        return;
+        alert("❌ Delete failed! Please check the backend or network.")
+        return
       }
 
-      alert("✅ Deleted successfully!");
-      router.push('/purchases');
+      alert("✅ Purchase deleted successfully!")
+      router.push('/purchases')
     } catch (err) {
-      console.error('Fetch Error:', err);
-      alert('Error while deleting.');
+      console.error('Fetch Error:', err)
+      alert('⚠️ Error while deleting. See console.')
     }
   }
 }
@@ -38,40 +39,31 @@ async function handleDelete() {
 onMounted(async () => {
   try {
     const response = await fetch(`${baseUrl}${endpoint}`, {
-      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Accept': 'application/json'
       }
-    });
+    })
 
-    let c = await response.json();
-    console.log('Fetched Purchase:', c);
+    const data = await response.json()
+    console.log('Fetched Purchase:', data)
 
-    purchase.value = c.purchase ?? c; 
+    purchase.value = data.purchase ?? data
   } catch (err) {
-    console.error('Fetch Error:', err);
+    console.error('Fetch Error:', err)
   }
-});
+})
 </script>
 
 <template>
   <div class="confirm-container">
+    <h2>🗑 Confirm Delete - Purchase ID #{{ purchaseId }}</h2>
+    <p>Are you sure you want to delete this purchase?</p>
 
-     <h2> Purchase ID #{{ purchaseId }}</h2> <br>
-   
-     
-     <p>Are you sure you want to delete this purchase?</p>
-   
-    
-  
-
-    <input class="btn btn-danger" type="button" @click="handleDelete" value="Yes, Confirm Delete" /> <br>
+    <input class="btn btn-danger" type="button" @click="handleDelete" value="Yes, Confirm Delete" />
+    <br />
     <router-link class="btn-back" to="/purchases">← Cancel</router-link>
   </div>
 </template>
-
-
 
 <style scoped>
 .confirm-container {

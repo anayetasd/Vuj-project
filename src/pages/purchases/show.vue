@@ -15,20 +15,26 @@ const fetchInvoice = async () => {
     })
 
     const data = await response.json()
+    console.log('API Response:', data)
 
-    purchase.value = data.purchase ?? {}
-    details.value = data.purchase?.details ?? []
-    supplier.value = data.purchase?.supplier ?? {}
+    const found = data.purchase ?? {} 
+
+    purchase.value = found
+    supplier.value = found.supplier ?? {}
+    details.value = found.details ?? []
 
     subtotal.value = details.value.reduce((sum, item) => {
       const qty = parseFloat(item.qty || 0)
       const price = parseFloat(item.price || 0)
-      return sum + qty * price
+      const discount = parseFloat(item.discount || 0)
+      return sum + (qty * price - discount)
     }, 0)
   } catch (err) {
     console.error('Error fetching invoice:', err)
   }
 }
+
+
 
 const formatNumber = (num) => parseFloat(num || 0).toFixed(2)
 
@@ -86,7 +92,7 @@ onMounted(fetchInvoice)
       <tbody>
         <tr v-for="(item, i) in details" :key="i">
           <td>{{ i + 1 }}</td>
-          <td>{{ item.product?.name || 'No Product' }}</td>
+          <td>{{ item.product?.name || item.product_name || 'No Product' }}</td>
           <td>{{ item.qty }}</td>
           <td>৳{{ formatNumber(item.price) }}</td>
           <td>৳{{ formatNumber(item.qty * item.price) }}</td>
@@ -110,7 +116,7 @@ onMounted(fetchInvoice)
 
 <style scoped>
 .invoice-container {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 40px auto;
   padding: 30px;
   background-color: #ffffff;

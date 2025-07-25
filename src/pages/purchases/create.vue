@@ -31,13 +31,20 @@ onMounted(async () => {
       fetch(`${baseUrl}products`)
     ])
 
-    suppliers.value = await supplierRes.json()
-    warehouses.value = await warehouseRes.json()
-    products.value = await productRes.json()
+    const supplierJson = await supplierRes.json()
+    const warehouseJson = await warehouseRes.json()
+    const productJson = await productRes.json()
+
+    suppliers.value = supplierJson.suppliers || []  
+    warehouses.value = warehouseJson.warehouses || []  
+    products.value = productJson.products || []  
   } catch (err) {
     console.error('Error loading data:', err)
   }
 })
+
+
+
 
 const selected = ref({
   product_id: '',
@@ -111,8 +118,7 @@ async function processPurchase() {
       body: JSON.stringify(payload)
     })
 
-    const text = await res.text()
-    const json = JSON.parse(text)
+    const json = await res.json()
 
     if (json.msg === 'Success') {
       alert('Purchase saved with ID: ' + json.id)
@@ -125,6 +131,7 @@ async function processPurchase() {
     alert('API error')
   }
 }
+
 </script>
 
 <template>

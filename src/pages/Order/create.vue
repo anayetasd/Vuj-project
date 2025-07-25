@@ -1,243 +1,251 @@
 <script setup>
-  import {ref, onMounted,toRaw,computed  } from 'vue'  
-     
+import { ref, onMounted, computed, toRaw } from 'vue'
 
-  const baseUrl=`http://anayet.intelsofts.com/project_app/public/api/`
-  const endpoint=`orders`
+const baseUrl = `http://anayet.intelsofts.com/project_app/public/api/`
+const endpoint = `orders`
+const endpoint2 = `customers`
+const endpoint3 = `products`
 
-  const endpoint2=`customers`
-  const endpoint3=`products`
-     
-  const customer_id=ref('');
-  const order_date=ref('');
-  const shipping_address=ref('');
-  const remark=ref('');
-  const order_total=ref(0);
+const customer_id = ref('')
+const order_date = ref('')
+const shipping_address = ref('')
+const remark = ref('')
+const order_total = ref(0)
 
-  const customers = ref({});
-  const products = ref({});  
+const customers = ref([])
+const products = ref([])
 
-  const items = ref([]);
-  const newItem = ref({id:'', name: '',qty:'', price: '',vat:'0',discount:'0' });
+const items = ref([])
+const newItem = ref({ id: '', name: '', qty: 1, price: 0, vat: 0, discount: 0 })
 
+const selectedText = computed(() => {
+  const selected = products.value.find(p => p.id === newItem.value.id)
+  return selected ? selected.name : ''
+})
 
-const selectedText = computed(() => {  
-  const selected = products.value.find(p => p.id === newItem.value.id);
-  return selected ? selected.name : '';
-});
-
-
-onMounted(async () => {  
-
+onMounted(async () => {
   try {
-     const [res1, res2] = await Promise.all([
+    const [res1, res2] = await Promise.all([
       fetch(`${baseUrl}${endpoint2}`),
       fetch(`${baseUrl}${endpoint3}`)
-    ]);    
+    ])
 
-    let r1= await res1.json();    
-    let r2= await res2.json(); 
-  
+    let r1 = await res1.json()
+    let r2 = await res2.json()
 
-    customers.value=r1.customers;
-    products.value=r2.products;
-
+    customers.value = r1.customers ?? r1
+    products.value = r2.products ?? r2
   } catch (err) {
-    console.error('Fetch Error:', err);
-    throw err;
+    console.error('Fetch Error:', err)
+  }
+})
+
+const addItem = () => {
+  const product = products.value.find(p => p.id === newItem.value.id)
+  if (!product) {
+    alert(" Product select করুন")
+    return
   }
 
-});
+  items.value.push({
+    product_id: newItem.value.id,
+    name: product.name,
+    qty: parseFloat(newItem.value.qty),
+    price: parseFloat(newItem.value.price),
+    vat: parseFloat(newItem.value.vat) || 0,
+    discount: parseFloat(newItem.value.discount) || 0
+  })
 
-const addItem = async () => {
-    items.value.push({id:newItem.value.id, name:selectedText.value,qty:newItem.value.qty, price: newItem.value.price,vat:newItem.value.vat,discount:newItem.value.discount }); 
-   
-    //console.log(selectedText.value);
+  newItem.value = { id: '', name: '', qty: 1, price: 0, vat: 0, discount: 0 }
 
-   order_total.value = items.value.reduce((accumulator, currentValue) => {
-    return accumulator + (currentValue.price*currentValue.qty || 0);
-  }, 0); 
-    
-};
-    
-
-async function submitOrder() {
-
- let jsonData={
-  customer_id:customer_id.value,
-  order_date:order_date.value,
-  delivery_date:order_date.value,
-  shipping_address:shipping_address.value,
-  order_total:order_total.value,
-  paid_amount:order_total.value,
-  status_id:1,
-  remark:'Na',
-  items:toRaw(items.value)
+  calculateTotal()
 }
 
-//console.log(jsonData);
+const calculateTotal = () => {
+  order_total.value = items.value.reduce((acc, item) => {
+    const subtotal = item.qty * item.price
+    const vatAmount = (subtotal * item.vat) / 100
+    const discountAmount = (subtotal * item.discount) / 100
+    return acc + subtotal + vatAmount - discountAmount
+  }, 0)
+}
+
+const submitOrder = async () => {
+  if (!customer_id.value) {
+    alert(' Select customer')
+    return
+  }
+
+  if (!order_date.value || items.value.length === 0) {
+    alert(' Select date and Minimum one product')
+    return
+  }
+
+  const payload = {
+    customer_id: parseInt(customer_id.value),
+    order_date: order_date.value,
+    delivery_date: order_date.value,
+    shipping_address: shipping_address.value,
+    order_total: order_total.value,
+    paid_amount: order_total.value,
+    remark: remark.value || 'N/A',
+    items: toRaw(items.value)
+  }
 
   try {
     const response = await fetch(`${baseUrl}${endpoint}`, {
-      method: 'POST',      
-      body: JSON.stringify(jsonData), // no need to set Content-Type
-       headers: {
+      method: 'POST',
+      headers: {
         'Content-Type': 'application/json',
-        'Accept':'application/json'        
-      }
-    });
+        Accept: 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
 
-    const res = await response.json();
+    const res = await response.json()
 
-    console.log(res);
-   // message.value = result.message || 'Upload successful';
+    if (response.ok) {
+      alert('✅ Order Saved Successfully (ID: ' + res.id + ')')
+      items.value = []
+      order_total.value = 0
+    } else {
+      alert(' Save failed: ' + (res.message || 'Unknown error'))
+    }
   } catch (error) {
-   // message.value = 'Upload failed: ' + error.message;
+    alert(' Error: ' + error.message)
   }
-
-  //console.log(jsonData);
-  
 }
-
-
-
 </script>
-<template>    
-   <div class="order-container">
-  <div class="order-header">
-    <h2>Create Order</h2>
-    
-  </div>
-  <div class="order-info">
-    <table>
-      <tbody>   
+
+<template>
+  <div class="order-container">
+    <div class="order-header">
+      <h2>Create Order</h2>
+    </div>
+
+    <div class="order-info">
+      <table>
+        <tbody>
           <tr>
-            <td>Customer Name</td><td>
-              <select id="customer" v-model="customer_id">
-                <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.name }}</option>
+            <td>Customer Name</td>
+            <td>
+              <select v-model="customer_id">
+                <option value="">Select Customer</option>
+                <option v-for="customer in customers" :key="customer.id" :value="customer.id">
+                  {{ customer.name }}
+                </option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Order Date</td>
+            <td><input v-model="order_date" type="date" /></td>
+          </tr>
+          <tr>
+            <td>Shipping Address</td>
+            <td><textarea v-model="shipping_address"></textarea></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <table class="order-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>VAT %</th>
+          <th>Discount %</th>
+          <th>Add</th>
+        </tr>
+        <tr>
+          <td>
+            <select v-model="newItem.id">
+              <option value="">Select Product</option>
+              <option v-for="product in products" :key="product.id" :value="product.id">
+                {{ product.name }}
+              </option>
             </select>
           </td>
-          </tr>
-          <tr>
-            <td>Order Date</td><td><input v-model="order_date" type="date" id="date" /></td>
-          </tr>
-          <tr>
-            <td>Shipping Address</td><td><textarea id="address" v-model="shipping_address"></textarea></td>
-          </tr>
-
+          <td><input type="number" v-model="newItem.qty" /></td>
+          <td><input type="number" v-model="newItem.price" /></td>
+          <td><input type="number" v-model="newItem.vat" /></td>
+          <td><input type="number" v-model="newItem.discount" /></td>
+          <td><button @click="addItem">Add</button></td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(item, index) in items" :key="index">
+          <td>{{ item.name }}</td>
+          <td>{{ item.qty }}</td>
+          <td>{{ item.price }}</td>
+          <td>{{ item.vat }}%</td>
+          <td>{{ item.discount }}%</td>
+          <td>{{ (item.qty * item.price).toFixed(2) }}</td>
+        </tr>
       </tbody>
-    </table>  
-    
+    </table>
+
+    <div class="order-total">
+      Total Amount: <input type="text" v-model="order_total" readonly />
+    </div>
+
+    <div>
+      <button class="btn btn-primary" @click="submitOrder">Create Order</button>
+    </div>
   </div>
-
-  <table class="order-table">
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Qty</th>
-        <th>Unit Price</th>
-        <th>Total</th>
-      </tr>
-       <tr>        
-        <th>
-          <select id="product" v-model="newItem.id">
-            <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
-         </select>
-        </th>
-        <th><input type="text" id="qty" v-model="newItem.qty"  /></th>
-        <th><input type="text" id="price" v-model="newItem.price"  /></th>
-        <th><input @click="addItem" type="button" id="add" value="Add" /></th>
-      
-      </tr>
-
-    </thead>
-    <tbody>
-
-      <tr v-for="item in items">
-        <td>{{item.id}} {{item.name}}</td>
-        <td>{{item.qty}}</td>
-        <td>{{item.price}}</td>
-        <td>{{item.qty*item.price}}</td>
-      </tr>
-      
-    </tbody>
-  </table>
-
-  <div class="order-total">
-    Total Amount:<input type="text" v-model="order_total" />
-  </div>
-  <div>
-    <button class="btn btn-primary" @click="submitOrder">Create Order</button>
-  </div>
-</div>
- 
 </template>
 
-<style>
+<style scoped>
+.order-container {
+  background-color: #fff;
+  width: 100%;
+  margin: auto;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
 
-    .order-container {
-      background-color: #fff;
-      width:100%;
-      margin: auto;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    }
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
 
-    .order-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #ddd;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
-    }
+.order-info {
+  margin-bottom: 20px;
+}
 
-    .order-header h2 {
-      margin: 0;
-      color: #333;
-    }
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
 
-    .order-info {
-      margin-bottom: 20px;
-    }
+.order-table th,
+.order-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
 
-    .order-info p {
-      margin: 5px 0;
-      color: #555;
-    }
+.order-table th {
+  background-color: #f8f8f8;
+}
 
-    .order-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-    }
+.order-total {
+  text-align: right;
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-top: 15px;
+}
 
-    .order-table th, .order-table td {
-      border: 1px solid #ddd;
-      padding: 10px;
-      text-align: left;
-    }
+td {
+  padding-bottom: 10px;
+}
 
-    .order-table th {
-      background-color: #f8f8f8;
-    }
-
-    .order-total {
-      text-align: right;
-      font-weight: bold;
-      font-size: 1.1em;
-      margin-top: 10px;
-    }
-
-    @media (max-width: 600px) {
-      .order-header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .order-header h2, .order-header span {
-        font-size: 1em;
-      }
-    }
-  </style>
+</style>

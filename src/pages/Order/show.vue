@@ -12,11 +12,17 @@ onMounted(async () => {
   try {
     const res = await fetch(`${baseUrl}${orderId}`)
     const data = await res.json()
+    console.log('Fetched order:', data.order) 
     order.value = data.order
   } catch (error) {
     console.error('Error fetching order:', error)
   }
 })
+
+// Helper function to get product name safely
+const getProductName = (item) => {
+  return item.product?.name || item.product_name || 'N/A'
+}
 
 const printInvoice = () => {
   const content = document.getElementById('printInvoice').innerHTML
@@ -65,7 +71,7 @@ const printInvoice = () => {
       <tbody>
         <tr v-for="(item, index) in order.order_details" :key="index">
           <td>{{ index + 1 }}</td>
-          <td>{{ item.product?.name || 'N/A' }}</td>
+          <td>{{ getProductName(item) }}</td>
           <td>{{ item.qty }}</td>
           <td>৳{{ item.price.toFixed(2) }}</td>
           <td>৳{{ item.discount.toFixed(2) }}</td>
@@ -80,7 +86,7 @@ const printInvoice = () => {
       <p><strong>Paid:</strong> ৳{{ order.paid_amount.toFixed(2) }}</p>
       <p><strong>Due:</strong> ৳{{ (
         (order.order_details?.reduce((sum, d) => sum + (d.qty * d.price - d.discount), 0) || 0)
-    - (order.paid_amount || 0)
+        - (order.paid_amount || 0)
       ).toFixed(2) }}</p>
     </div>
 

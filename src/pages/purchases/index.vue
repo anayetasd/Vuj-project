@@ -41,7 +41,7 @@ onMounted(() => {
 <template>
   <div class="container purchase-container">
     <div class="top-bar">
-      <a class="btn btn-info" href="/purchases/create">+ Add New Purchase</a>
+       <router-link class="btn btn-info" to="/purchases/create">Add New Purchases</router-link>
     </div>
 
     <table class="table purchase-table">
