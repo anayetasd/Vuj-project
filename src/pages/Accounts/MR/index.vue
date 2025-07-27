@@ -10,7 +10,7 @@
         <tr>
           <th>ID</th>
           <th>Customer</th>
-          <th>Receipt Date</th>
+          <!-- <th>Receipt Date</th> -->
           <th>Shipping Address</th>
           <th>Receipt Total</th>
           <th>Paid Amount</th>
@@ -22,7 +22,7 @@
         <tr v-for="mr in mrs" :key="mr.id">
           <td>{{ mr.id }}</td>
           <td>{{ mr.customer?.name || 'No Name' }}</td>
-          <td>{{ mr.receipt_date || '2024-06-24' }}</td>
+          <!-- <td>{{ mr.receipt_date || '2024-06-24' }}</td> -->
           <td>{{ mr.shipping_address || 'Barishal' }}</td>
           <td>{{ formatNumber(mr.receipt_total) }}</td>
           <td>{{ formatNumber(mr.paid_amount) }}</td>

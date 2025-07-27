@@ -1,188 +1,196 @@
-<script setup>
-  import {ref,onMounted } from 'vue'   
-  import { useRoute } from 'vue-router';
+<template>
+  <div :style="styles.formContainer">
+    <h1 :style="styles.heading">Edit Customer</h1>
+    <RouterLink to="/customers" :style="styles.btnBack">← Back</RouterLink>
 
-  const route = useRoute();
-  const customerId = route.params.id;     
+    <p v-if="message" :style="styles.message">{{ message }}</p>
 
-  const baseUrl = `http://anayet.intelsofts.com/project_app/public/api/`   
-  const endpoint = `customers/${customerId}`
-
-  const customer = ref({
-    name: '',
-    mobile: '',
-    email: ''
-  });
-
-  const file = ref(null);
-  const message = ref('');
-
-  onMounted(async () => {  
-    try {
-      const response = await fetch(`${baseUrl}${endpoint}`, {
-        method:'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept':'application/json'        
-        }
-      });  
-
-      let c= await response.json();    
-      customer.value = c;
-    } catch (err) {
-      console.error('Fetch Error:', err);
-      throw err;
-    }
-  })
-
-  function handleFile(event) {
-    file.value = event.target.files[0];
-  }
-
-  async function submitCustomer() {
-    const formData = new FormData();
-    formData.append('name', customer.value.name);
-    formData.append('mobile', customer.value.mobile);
-    formData.append('email', customer.value.email);
-    formData.append('photo', file.value); // image file
-
-    try {
-      const response = await fetch(`${baseUrl}${endpoint}`, {
-        method: 'POST',      
-        body: formData,
-      });
-
-      const result = await response.json();
-      message.value = result.message || 'Upload successful';
-    } catch (error) {
-      message.value = 'Upload failed: ' + error.message;
-    }
-  }
-</script>
-
-<template>    
-  <div class="form-container">
-    <h1>Edit Customer</h1>
-    <router-link class="btn-back" to="/customers">← Back</router-link>
-
-    <p class="message" v-if="message">{{ message }}</p>
-
-    <form @submit.prevent="submitCustomer" class="form">
-      <div class="form-group">
+    <form @submit.prevent="submitCustomer" :style="styles.form">
+      <div :style="styles.formGroup">
         <label for="name">Name</label>
-        <input v-model="customer.name" type="text" id="name" name="name" required />
+        <input
+          v-model="customer.name"
+          type="text"
+          id="name"
+          name="name"
+          required
+          :style="styles.input"
+        />
       </div>
 
-      <div class="form-group">
+      <div :style="styles.formGroup">
         <label for="mobile">Mobile</label>
-        <input v-model="customer.mobile" type="text" id="mobile" name="mobile" required />
+        <input
+          v-model="customer.mobile"
+          type="text"
+          id="mobile"
+          name="mobile"
+          required
+          :style="styles.input"
+        />
       </div>
 
-      <div class="form-group">
+      <div :style="styles.formGroup">
         <label for="email">Email</label>
-        <input v-model="customer.email" type="email" id="email" name="email" required />
+        <input
+          v-model="customer.email"
+          type="email"
+          id="email"
+          name="email"
+          required
+          :style="styles.input"
+        />
       </div>
 
-      <div class="form-group">
+      <div :style="styles.formGroup">
         <label for="photo">Photo</label>
-        <input type="file" id="photo" @change="handleFile" accept="image/*" />
+        <input
+          type="file"
+          id="photo"
+          accept="image/*"
+          @change="handleFileChange"
+          :style="styles.input"
+        />
       </div>
 
-      <button type="submit" class="btn-submit">Submit</button>
+      <button type="submit" :style="styles.btnSubmit">Submit</button>
     </form>
   </div>
 </template>
 
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+const route = useRoute()
+const router = useRouter()
+const id = route.params.id
+
+const customer = reactive({
+  name: '',
+  mobile: '',
+  email: '',
+})
+const file = ref(null)
+const message = ref('')
+const baseUrl = `http://anayet.intelsofts.com/project_app/public/api/customers/${id}`
+
+const fetchCustomer = async () => {
+  try {
+    const res = await fetch(baseUrl)
+    const data = await res.json()
+    customer.name = data.name
+    customer.mobile = data.mobile
+    customer.email = data.email
+  } catch (err) {
+    console.error('Fetch error:', err)
+    message.value = 'Failed to load customer data'
+  }
+}
+
+onMounted(fetchCustomer)
+
+const handleFileChange = (e) => {
+  file.value = e.target.files[0]
+}
+
+const submitCustomer = async () => {
+  const formData = new FormData()
+  formData.append('name', customer.name)
+  formData.append('mobile', customer.mobile)
+  formData.append('email', customer.email)
+  formData.append('_method', 'PUT')
+  if (file.value) {
+    formData.append('photo', file.value)
+  }
+
+  try {
+    const res = await fetch(baseUrl, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (res.ok) {
+      const result = await res.json()
+      message.value = result.message || 'Update successful'
+      setTimeout(() => {
+        router.push('/customers')
+      }, 1500)
+    } else {
+      message.value = 'Failed to update customer'
+    }
+  } catch (error) {
+    message.value = 'Upload failed: ' + error.message
+  }
+}
+</script>
+
 <style scoped>
-.form-container {
-  width: 1100px;
-  margin: 40px auto;
-  padding: 30px 40px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
-}
-
-h1 {
-  text-align: center;
-  color: #0d6efd;
-  margin-bottom: 25px;
-}
-
-.btn-back {
-  display: inline-block;
-  margin-bottom: 20px;
-  color: #6c757d;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.btn-back:hover {
-  color: #495057;
-}
-
-.message {
-  margin: 15px 0;
-  padding: 10px;
-  background-color: #e7f3ff;
-  border: 1px solid #b6d4fe;
-  color: #3178c6;
-  border-radius: 6px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-label {
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #444;
-}
-
-input[type="text"],
-input[type="email"],
-input[type="file"] {
-  padding: 10px 12px;
-  border: 1.5px solid #ccc;
-  border-radius: 8px;
-  font-size: 15px;
-  transition: border-color 0.3s ease;
-}
-
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="file"]:focus {
-  border-color: #0d6efd;
-  outline: none;
-}
-
-.btn-submit {
-  background-color: #0d6efd;
-  color: white;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: 700;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  width: 20%;
-}
-
-.btn-submit:hover {
-  background-color: #084fc2;
-}
+/* You may move this to global or keep using inline styles as in the React version */
 </style>
+
+<script>
+const styles = {
+  formContainer: {
+    width: '1100px',
+    margin: '40px auto',
+    padding: '30px 40px',
+    background: '#fff',
+    borderRadius: '12px',
+    boxShadow: '0 0 20px rgba(0,0,0,0.1)',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    color: '#333',
+  },
+  heading: {
+    textAlign: 'center',
+    color: '#0d6efd',
+    marginBottom: '25px',
+  },
+  btnBack: {
+    display: 'inline-block',
+    marginBottom: '20px',
+    color: '#1c5d96ff',
+    textDecoration: 'none',
+    fontWeight: 600,
+    transition: 'color 0.3s ease',
+  },
+  message: {
+    margin: '15px 0',
+    padding: '10px',
+    backgroundColor: '#e7f3ff',
+    border: '1px solid #b6d4fe',
+    color: '#3178c6',
+    borderRadius: '6px',
+    fontWeight: 600,
+    textAlign: 'center',
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '18px',
+  },
+  formGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  input: {
+    padding: '10px 12px',
+    border: '1.5px solid #ccc',
+    borderRadius: '8px',
+    fontSize: '15px',
+    transition: 'border-color 0.3s ease',
+  },
+  btnSubmit: {
+    backgroundColor: '#0d6efd',
+    color: 'white',
+    padding: '14px',
+    fontSize: '16px',
+    fontWeight: '700',
+    border: 'none',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s ease',
+    width: '20%',
+  },
+}
+</script>

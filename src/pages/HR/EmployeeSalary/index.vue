@@ -1,40 +1,67 @@
 <template>
-  <div class="container">
-    <router-link class="btn btn-info btn-new-supplier" to="/employeesalarys/create">
-      ➕ New Employee_salary
-    </router-link>
+  <div
+    class="container mt-5 p-4"
+    :style="{
+      backgroundColor: '#ffffff',
+      borderRadius: '15px',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+      maxWidth: '1200px',
+    }"
+  >
+   <router-link
+  to="/employeesalarys/create"
+  class="btn btn-info mb-2 fw-bold fs-5 px-3 py-2"
+>
+  ➕ New Salary
+</router-link>
 
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
         <thead>
-          <tr>
+          <tr
+            :style="{
+              background:
+                'linear-gradient(to right, #0d6efd, #3b82f6)',
+              color: '#fff',
+              textAlign: 'center',
+            }"
+          >
             <th>Id</th>
             <th>Name</th>
-            <th>Payment date</th>
-            <th>Administrator ID</th>
-            <th>Payment Method ID</th>
+            <th>Payment Date</th>
+            <th>Administrator</th>
+            <th>Payment Method</th>
             <th>Total Amount</th>
             <th>Paid Amount</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="employeesalarys.length === 0">
-            <td colspan="8" class="no-data">No Employee Salary found.</td>
+          <tr v-if="loading">
+            <td colspan="8" class="text-center py-3">Loading...</td>
           </tr>
-          <tr v-for="salary in employeesalarys" :key="salary.id">
+          <tr v-else-if="employeeSalaries.length === 0">
+            <td
+              colspan="8"
+              class="no-data text-center fs-5 fw-medium py-4"
+              :style="{ backgroundColor: '#fff3cd', color: '#856404' }"
+            >
+              No Employee Salary found.
+            </td>
+          </tr>
+          <tr v-else v-for="salary in employeeSalaries" :key="salary.id">
             <td>{{ salary.id }}</td>
             <td>{{ salary.name }}</td>
             <td>{{ salary.payment_date }}</td>
-            <td>{{ salary.employee_administrator_id || 'N/A' }}</td>
-            <td>{{ salary.payment_method_id || 'N/A' }}</td>
+            <td>{{ salary.administrator?.name || 'N/A' }}</td>
+            <td>{{ salary.payment?.name || 'N/A' }}</td>
             <td>{{ salary.total_amount }}</td>
             <td>{{ salary.paid_amount }}</td>
             <td>
               <div class="btn-group">
-                <router-link class="btn btn-sm btn-primary" :to="`/employeesalarys/${salary.id}/edit`">Edit</router-link>
-                <router-link class="btn btn-sm btn-success" :to="`/employeesalarys/${salary.id}`">View</router-link>
-                <router-link class="btn btn-sm btn-danger" :to="`/employeesalarys/delete/${salary.id}`">Delete</router-link>
+                <router-link :to="`/employeesalarys/${salary.id}/edit`" class="btn btn-sm btn-primary me-1" >Edit </router-link>
+                <router-link :to="`/employeesalarys/${salary.id}`"  class="btn btn-sm btn-success me-1" > View</router-link>
+                <router-link :to="`/employeesalarys/delete/${salary.id}`" class="btn btn-sm btn-danger"> Delete</router-link>
               </div>
             </td>
           </tr>
@@ -45,75 +72,35 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from "vue";
 
-const employeesalarys = ref([])
+const baseUrl = "http://anayet.intelsofts.com/project_app/public/api";
+
+const employeeSalaries = ref([]);
+const loading = ref(true);
 
 const fetchSalaries = async () => {
+  loading.value = true;
   try {
-    const res = await fetch(`http://anayet.intelsofts.com/project_app/public/api/employeesalarys`)
-    const data = await res.json()
-    employeesalarys.value = data.employeesalarys
-  } catch (err) {
-    console.error('Fetch error:', err)
+    const res = await fetch(`${baseUrl}/employeesalarys`);
+    const data = await res.json();
+    console.log("API Response:", data.employeesalarys);
+    employeeSalaries.value = data.employeesalarys || [];
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    employeeSalaries.value = [];
+  } finally {
+    loading.value = false;
   }
-}
+};
 
 onMounted(() => {
-  fetchSalaries()
-})
+  fetchSalaries();
+});
 </script>
 
 <style scoped>
-.container {
-  margin-top: 40px;
-  background-color: #ffffff;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  width: 1200px;
-}
-
-.table thead th {
-  background: linear-gradient(to right, #0d6efd, #3b82f6);
-  color: #ffffff;
-  text-align: center;
-  font-weight: 600;
-  font-size: 17px;
-  padding: 15px;
-}
-
-.table td {
-  text-align: center;
-  vertical-align: middle;
-  font-size: 16px;
-  padding: 14px;
-  height: 60px;
-}
-
-.table-striped tbody tr:nth-of-type(odd) {
-  background-color: #f9f9f9;
-}
-
-.btn-group a {
-  margin: 0 4px;
-  min-width: 70px;
-}
-
-.btn-new-supplier {
-  margin-bottom: 20px;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-  font-size: 16px;
-  padding: 10px 20px;
-}
-
-.no-data {
-  text-align: center;
-  font-size: 18px;
-  font-weight: 500;
-  padding: 20px;
-  background-color: #fff3cd;
-  color: #856404;
+.btn-group .btn {
+  margin-right: 0.25rem;
 }
 </style>

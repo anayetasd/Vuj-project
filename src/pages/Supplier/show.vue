@@ -57,40 +57,9 @@
       </tr>
     </tbody>
   </table>
-
-
     <p v-else>Loading supplier details...</p>
   </div>
 </template>
-
-<!-- <script>
-export default {
-  name: "SupplierShow",
-  data() {
-    return {
-      supplier: null,
-    };
-  },
-  mounted() {
-    this.fetchSupplier();
-  },
-  methods: {
-    async fetchSupplier() {
-      const id = this.$route.params.id;
-      try {
-        const response = await fetch(`http://anayet.intelsofts.com/project_app/public/api/suppliers/${id}`);
-        if (!response.ok) {
-          throw new Error("Failed to load supplier");
-        }
-        this.supplier = await response.json();
-      } catch (error) {
-        console.error("Error fetching supplier:", error);
-        alert("❌ Could not fetch supplier.");
-      }
-    },
-  },
-};
-</script> -->
 
 <style scoped>
 .view-container {

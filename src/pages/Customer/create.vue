@@ -1,77 +1,110 @@
-<script setup>
-  import { ref } from 'vue'
-
-  const baseUrl = `http://anayet.intelsofts.com/project_app/public/api/`
-  const endpoint = `customers`
-
-  const product = ref({
-    name: '',
-    mobile: '',
-    email: ''
-  })
-
-  const file = ref(null)
-  const message = ref('')
-
-  function handleFile(event) {
-    file.value = event.target.files[0]
-  }
-
-  async function submitCustomer() {
-    const formData = new FormData()
-    formData.append('name', product.value.name)
-    formData.append('mobile', product.value.mobile)
-    formData.append('email', product.value.email)
-    formData.append('photo', file.value)
-
-    try {
-      const response = await fetch(`${baseUrl}${endpoint}`, {
-        method: 'POST',
-        body: formData,
-      })
-
-      const result = await response.json()
-      message.value = result.message || 'Upload successful'
-    } catch (error) {
-      message.value = 'Upload failed: ' + error.message
-    }
-  }
-</script>
-
 <template>
   <div class="form-container">
-    <h1>Create Customer</h1>
-    <router-link class="btn-back" to="/customers">← Back</router-link>
+    <h1 class="heading">Create Customer</h1>
+    <router-link to="/customers" class="back-btn">← Back</router-link>
 
-    <p class="message" v-if="message">{{ message }}</p>
+    <p v-if="message" class="message">{{ message }}</p>
 
-    <form @submit.prevent="submitCustomer" class="customer-form">
+    <form @submit.prevent="submitCustomer" class="form">
       <div class="form-group">
-        <label for="name">Name</label>
-        <input v-model="product.name" type="text" id="name" name="name" required />
+        <label>Name</label>
+        <input v-model="form.name" type="text" name="name" required />
       </div>
 
       <div class="form-group">
-        <label for="mobile">Mobile</label>
-        <input v-model="product.mobile" type="text" id="mobile" name="mobile" required />
+        <label>Mobile</label>
+        <input v-model="form.mobile" type="text" name="mobile" required />
       </div>
 
       <div class="form-group">
-        <label for="email">Email</label>
-        <input v-model="product.email" type="email" id="email" name="email" required />
+        <label>Email</label>
+        <input v-model="form.email" type="email" name="email" required />
       </div>
 
       <div class="form-group">
-        <label for="photo">Photo</label>
-        <input type="file" id="photo" @change="handleFile" accept="image/*" required />
+        <label>Address</label>
+        <input v-model="form.address" type="text" name="address" required />
       </div>
 
       <div class="form-group">
-        <input type="submit" value="Submit" class="btn-submit" />
+        <label>Photo</label>
+        <input type="file" accept="image/*" @change="handleFile" required />
+      </div>
+
+      <div v-if="preview" class="image-preview">
+        <img :src="preview" alt="Preview" class="image" />
+      </div>
+
+      <div class="form-group">
+        <button type="submit" class="submit-btn">Submit</button>
       </div>
     </form>
   </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+const baseUrl = 'http://anayet.intelsofts.com/project_app/public/api/customers';
+
+const form = ref({
+  name: '',
+  mobile: '',
+  email: '',
+  address: ''
+});
+
+const file = ref(null);
+const preview = ref(null);
+const message = ref('');
+
+function handleFile(e) {
+  const selected = e.target.files[0];
+  if (!selected) return;
+
+  if (!selected.type.startsWith('image/')) {
+    alert('Please select a valid image file');
+    return;
+  }
+
+  file.value = selected;
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    preview.value = reader.result;
+  };
+  reader.readAsDataURL(selected);
+}
+
+async function submitCustomer() {
+  const formData = new FormData();
+  formData.append('name', form.value.name);
+  formData.append('mobile', form.value.mobile);
+  formData.append('email', form.value.email);
+  formData.append('address', form.value.address);
+  formData.append('photo', file.value);
+
+  try {
+    const response = await fetch(baseUrl, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      alert(result.message || 'Customer saved successfully!');
+      setTimeout(() => router.push('/customers'), 1000);
+    } else {
+      alert(result.message || 'Something went wrong!');
+    }
+  } catch (error) {
+    alert('Upload failed: ' + error.message);
+  }
+}
+</script>
 
 <style scoped>
 .form-container {
@@ -83,14 +116,12 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
-h1 {
+.heading {
   color: #0d6efd;
   margin-bottom: 25px;
   text-align: center;
 }
-
-.btn-back {
+.back-btn {
   display: inline-block;
   margin-bottom: 20px;
   background-color: #6c757d;
@@ -98,13 +129,7 @@ h1 {
   padding: 8px 16px;
   border-radius: 6px;
   text-decoration: none;
-  transition: background-color 0.3s ease;
 }
-
-.btn-back:hover {
-  background-color: #5a6268;
-}
-
 .message {
   margin-bottom: 15px;
   padding: 12px 15px;
@@ -115,43 +140,24 @@ h1 {
   font-weight: 600;
   border: 1px solid #badbcc;
 }
-
-.customer-form {
+.form {
   display: flex;
   flex-direction: column;
 }
-
 .form-group {
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
 }
-
-label {
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #333;
-  font-size: 15px;
-}
-
-input[type="text"],
-input[type="email"],
-input[type="file"] {
+input[type='text'],
+input[type='email'],
+input[type='file'] {
   padding: 10px 12px;
   border: 1.5px solid #ccc;
   border-radius: 8px;
   font-size: 14px;
-  transition: border-color 0.3s ease;
 }
-
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="file"]:focus {
-  border-color: #0d6efd;
-  outline: none;
-}
-
-.btn-submit {
+.submit-btn {
   background-color: #0d6efd;
   color: white;
   padding: 12px 0;
@@ -160,10 +166,14 @@ input[type="file"]:focus {
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
-
-.btn-submit:hover {
-  background-color: #084fc2;
+.image-preview {
+  margin-bottom: 20px;
+  text-align: center;
+}
+.image {
+  max-width: 150px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 }
 </style>

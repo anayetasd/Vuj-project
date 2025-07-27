@@ -1,206 +1,156 @@
 <template>
-  <div>
-    <router-link class="btn btn-success" to="/productions">← Back</router-link>
+  <div class="container mt-5">
+    <h2 class="mb-4">Edit Production</h2>
+    <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-    <div class="form-container">
-      <h2>Edit Production</h2>
+    <form @submit.prevent="handleSubmit">
+      <div class="mb-3">
+        <label class="form-label">Production Date</label>
+        <input
+          type="date"
+          v-model="form.production_date"
+          class="form-control"
+          required
+        />
+      </div>
 
-      <form @submit.prevent="updateProduction">
-        <div class="form-group">
-          <label for="production_date">Production Date</label>
-          <input v-model="form.production_date" type="text" id="production_date" />
-        </div>
+      <div class="mb-3">
+        <label class="form-label">Product</label>
+        <select v-model="form.product_id" class="form-control" required>
+          <option value="">Select Product</option>
+          <option
+            v-for="product in products"
+            :key="product.id"
+            :value="product.id"
+          >
+            {{ product.name || "Unnamed" }}
+          </option>
+        </select>
+      </div>
 
-        <div class="form-group">
-          <label for="product_id">Product Name</label>
-          <select v-model="form.product_id" id="product_id">
-            <option v-for="product in products" :key="product.id" :value="product.id">
-              {{ product.name }}
-            </option>
-          </select>
-        </div>
+      <div class="mb-3">
+        <label class="form-label">Raw Material</label>
+        <select v-model="form.raw_material_id" class="form-control" required>
+          <option value="">Select Raw Material</option>
+          <option
+            v-for="raw in rawmaterials"
+            :key="raw.id"
+            :value="raw.id"
+          >
+            {{ raw.name || "Unnamed" }}
+          </option>
+        </select>
+      </div>
 
-        <div class="form-group">
-          <label for="raw_material_id">Raw Material Used</label>
-          <select v-model="form.raw_material_id" id="raw_material_id">
-            <option v-for="raw in rawmaterials" :key="raw.id" :value="raw.id">
-              {{ raw.name }}
-            </option>
-          </select>
-        </div>
+      <div class="mb-3">
+        <label class="form-label">Raw Material Quantity</label>
+        <input
+          type="number"
+          v-model="form.raw_material_qty"
+          class="form-control"
+          required
+        />
+      </div>
 
-        <div class="form-group">
-          <label for="raw_material_qty">Raw Material Qty</label>
-          <select v-model="form.raw_material_qty" id="raw_material_qty">
-            <option v-for="raw in rawmaterials" :key="raw.id" :value="raw.id">
-              {{ raw.unit }}
-            </option>
-          </select>
-        </div>
+      <div class="mb-3">
+        <label class="form-label">Unit</label>
+        <input
+          type="text"
+          v-model="form.unit"
+          class="form-control"
+          required
+        />
+      </div>
 
-        <div class="form-group">
-          <label for="unit">Wastage Unit</label>
-          <input v-model="form.unit" type="text" id="unit" />
-        </div>
+      <div class="mb-3">
+        <label class="form-label">Quantity Produced</label>
+        <input
+          type="number"
+          v-model="form.quantity_produced"
+          class="form-control"
+          required
+        />
+      </div>
 
-        <div class="form-group">
-          <label for="quantity_produced">Total Produced</label>
-          <input v-model="form.quantity_produced" type="text" id="quantity_produced" />
-        </div>
-
-        <div class="form-submit">
-          <input type="submit" value="Update" />
-        </div>
-      </form>
-    </div>
+      <button type="submit" class="btn btn-primary">Update Production</button>
+      <router-link to="/productions" class="btn btn-secondary ms-2">Cancel</router-link>
+    </form>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-const route = useRoute()
-const router = useRouter()
-const id = route.params.id
-
-const baseUrl = 'http://anayet.intelsofts.com/project_app/public/api'
+const route = useRoute();
+const router = useRouter();
+const baseUrl = "http://anayet.intelsofts.com/project_app/public/api";
+const id = route.params.id;
 
 const form = ref({
-  production_date: '',
-  product_id: '',
-  raw_material_id: '',
-  raw_material_qty: '',
-  unit: '',
-  quantity_produced: ''
-})
+  production_date: "",
+  product_id: "",
+  raw_material_id: "",
+  raw_material_qty: "",
+  unit: "",
+  quantity_produced: ""
+});
 
-const products = ref([])
-const rawmaterials = ref([])
+const products = ref([]);
+const rawmaterials = ref([]);
+const error = ref("");
 
-onMounted(() => {
-  fetchData()
-})
-
-async function fetchData() {
+const fetchData = async () => {
   try {
-    const [prodRes, metaRes] = await Promise.all([
-      fetch(`${baseUrl}/productions/${id}`),
-      fetch(`${baseUrl}/productions/create`)
-    ])
+    const prodRes = await fetch(`${baseUrl}/productions/${id}`);
+    const prodData = await prodRes.json();
 
-    const prodData = await prodRes.json()
-    const metaData = await metaRes.json()
+    const productRes = await fetch(`${baseUrl}/products`);
+    const productData = await productRes.json();
 
-    form.value = {
-      production_date: prodData.production.production_date,
-      product_id: prodData.production.product_id,
-      raw_material_id: prodData.production.raw_material_id,
-      raw_material_qty: prodData.production.raw_material_id, // assuming same as raw_material_id
-      unit: prodData.production.unit,
-      quantity_produced: prodData.production.quantity_produced
+    const rawRes = await fetch(`${baseUrl}/rawmaterials`);
+    const rawData = await rawRes.json();
+
+    if (prodData?.production) {
+      form.value = {
+        production_date: prodData.production.production_date || "",
+        product_id: prodData.production.product_id || "",
+        raw_material_id: prodData.production.raw_material_id || "",
+        raw_material_qty: prodData.production.raw_material_qty?.toString() || "",
+        unit: prodData.production.unit || "",
+        quantity_produced: prodData.production.quantity_produced?.toString() || ""
+      };
     }
 
-    products.value = metaData.products
-    rawmaterials.value = metaData.rawmaterials
-  } catch (error) {
-    console.error('Fetch Error:', error)
+    products.value = productData.products || [];
+    rawmaterials.value = rawData.rawmaterials || [];
+  } catch (err) {
+    console.error("Error fetching data:", err);
+    error.value = "Failed to load data.";
   }
-}
+};
 
-async function updateProduction() {
+const handleSubmit = async () => {
   try {
-    const res = await fetch(`${baseUrl}/productions/${id}`, {
-      method: 'PUT',
+    const response = await fetch(`${baseUrl}/productions/${id}`, {
+      method: "PUT",
       headers: {
-        'Accept': 'application/json'
+        "Content-Type": "application/json"
       },
-      body: buildFormData(form.value)
-    })
+      body: JSON.stringify(form.value)
+    });
 
-    if (res.ok) {
-      alert('Production updated successfully')
-      router.push('/productions')
+    if (response.ok) {
+      router.push("/productions");
     } else {
-      const data = await res.json()
-      alert('Update failed: ' + (data.message || 'Error occurred'))
+      const errData = await response.json();
+      error.value = errData.message || "Failed to update.";
     }
-  } catch (error) {
-    console.error('Update Error:', error)
+  } catch (err) {
+    console.error("Submit error:", err);
+    error.value = "Error submitting form.";
   }
-}
+};
 
-function buildFormData(data) {
-  const formData = new FormData()
-  for (const key in data) {
-    formData.append(key, data[key])
-  }
-  return formData
-}
+onMounted(fetchData);
 </script>
-
-<style scoped>
-.form-container {
-  max-width: 1000px;
-  margin: 40px auto;
-  padding: 30px;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.form-container h2 {
-  margin-bottom: 25px;
-  text-align: center;
-  color: #333;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: bold;
-  color: #555;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 16px;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  border-color: #007bff;
-  outline: none;
-}
-
-.form-submit {
-  text-align: center;
-}
-
-.form-submit input[type='submit'] {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 30px;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.form-submit input[type='submit']:hover {
-  background-color: #0056b3;
-}
-
-.btn-success {
-  margin: 20px;
-}
-</style>

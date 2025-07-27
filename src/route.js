@@ -130,7 +130,7 @@ const routes = [
       {path: 'customers/create',component: CreateCustomers},
       {path: 'customers/:id',component: ShowCustomers},
       {path: 'customers/:id/edit',component: EditCustomers},
-      {path: 'customers/delete/:id',component: DeleteCustomers},
+      {path: 'customers/:id/confirm',component: DeleteCustomers},
 
 
       {path: 'orders',component: IndexOrder},
@@ -150,7 +150,7 @@ const routes = [
       {path: 'products/create',component: CreateProducts},
       {path: 'products/:id',component: ShowProducts},
       {path: 'products/:id/edit',component: EditProducts},
-      {path: 'products/delete/:id',component: DeleteProducts},
+      {path: 'products/:id/confirm', component: DeleteProducts},
 
       {path: 'stocks',component: IndexStocks},
       {path: 'stocks/create',component: CreateStocks},

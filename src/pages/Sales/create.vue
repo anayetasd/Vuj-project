@@ -4,18 +4,6 @@
 
     <form @submit.prevent="handleSubmit">
       <div class="form-group">
-        <label for="id">ID</label>
-        <input
-          v-model="form.id"
-          type="text"
-          id="id"
-          name="id"
-          required
-          placeholder="Enter sale ID"
-        />
-      </div>
-
-      <div class="form-group">
         <label for="customer_id">Customer</label>
         <select v-model="form.customer_id" id="customer_id" required>
           <option value="" disabled>Select a customer</option>
@@ -83,11 +71,9 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-
 const customers = ref([])
 
 const form = ref({
-  id: '',
   customer_id: '',
   total_amount: '',
   discount: '',
@@ -95,18 +81,19 @@ const form = ref({
   created_at: '',
 })
 
-// Fetch customers on mount
+// Fetch customer list
 const fetchCustomers = async () => {
   try {
     const res = await fetch('http://anayet.intelsofts.com/project_app/public/api/customers')
     if (!res.ok) throw new Error('Failed to fetch customers')
-    customers.value = await res.json()
+    const data = await res.json()
+    customers.value = data.customers
   } catch (err) {
-    alert(err.message)
+    alert('❌ ' + err.message)
   }
 }
 
-// Format current datetime for datetime-local input
+// Set default date-time
 const pad = (n) => (n < 10 ? '0' + n : n)
 onMounted(() => {
   fetchCustomers()
@@ -116,24 +103,31 @@ onMounted(() => {
   )}T${pad(now.getHours())}:${pad(now.getMinutes())}`
 })
 
-// Handle form submit
+// Handle submit
 const handleSubmit = async () => {
   try {
-    // Basic validation (you can add more if needed)
-    if (!form.value.id || !form.value.customer_id || !form.value.total_amount) {
+    if (!form.value.customer_id || !form.value.total_amount) {
       alert('Please fill in all required fields.')
       return
     }
 
     const res = await fetch('http://anayet.intelsofts.com/project_app/public/api/sales', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(form.value),
     })
 
+    const contentType = res.headers.get('content-type')
     if (!res.ok) {
-      const errorData = await res.json()
-      throw new Error(errorData.message || 'Failed to save sale')
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await res.json()
+        throw new Error(errorData.message || 'Failed to save sale')
+      } else {
+        throw new Error('Unexpected server error. Please check backend.')
+      }
     }
 
     alert('✅ Sale saved successfully!')

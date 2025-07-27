@@ -1,159 +1,243 @@
 <template>
-  <div>
-    <router-link to="/employeesalarys" class="btn-back">← Back</router-link>
+  <div class="form-container">
+    <router-link class="btn-back" to="/employeesalarys">
+      ← Back to Employee Salary
+    </router-link>
 
-    <div class="form-container" v-if="salary">
-      <h2>Edit Employee Salary</h2>
-      <form @submit.prevent="updateSalary">
-        <div class="form-group">
-          <label for="name">Employee Name</label>
-          <input v-model="form.name" type="text" id="name" required />
-        </div>
+    <h2>Edit Employee Salary</h2>
+    <form @submit.prevent="handleSubmit">
+      <div class="form-group">
+        <label for="name">Employee Name</label>
+        <input
+          type="text"
+          id="name"
+          v-model="form.name"
+          required
+        />
+      </div>
 
-        <div class="form-group">
-          <label for="payment_date">Payment Date</label>
-          <input v-model="form.payment_date" type="date" id="payment_date" required />
-        </div>
+      <div class="form-group">
+        <label for="payment_date">Payment Date</label>
+        <input
+          type="date"
+          id="payment_date"
+          v-model="form.payment_date"
+          required
+        />
+      </div>
 
-        <div class="form-group">
-          <label for="employee_administrator_id">Administrator ID</label>
-          <input v-model="form.employee_administrator_id" type="text" id="employee_administrator_id" readonly />
-        </div>
+      <div class="form-group">
+        <label for="employee_administrator_id">Administrator</label>
+        <select
+          id="employee_administrator_id"
+          v-model="form.employee_administrator_id"
+          required
+        >
+          <option value="">-- Select Administrator --</option>
+          <option v-for="admin in administrators" :key="admin.id" :value="admin.id">
+            {{ admin.role || admin.name }}
+          </option>
+        </select>
+      </div>
 
-        <div class="form-group">
-          <label for="payment_method_id">Payment Method ID</label>
-          <input v-model="form.payment_method_id" type="text" id="payment_method_id" readonly />
-        </div>
+      <div class="form-group">
+        <label for="payment_method_id">Payment Method</label>
+        <select
+          id="payment_method_id"
+          v-model="form.payment_method_id"
+          required
+        >
+          <option value="">-- Select Payment Method --</option>
+          <option v-for="pay in payments" :key="pay.id" :value="pay.id">
+            {{ pay.name }}
+          </option>
+        </select>
+      </div>
 
-        <div class="form-group">
-          <label for="total_amount">Total Amount</label>
-          <input v-model="form.total_amount" type="text" id="total_amount" />
-        </div>
+      <div class="form-group">
+        <label for="total_amount">Total Amount</label>
+        <input
+          type="number"
+          id="total_amount"
+          v-model="form.total_amount"
+        />
+      </div>
 
-        <div class="form-group">
-          <label for="paid_amount">Paid Amount</label>
-          <input v-model="form.paid_amount" type="text" id="paid_amount" />
-        </div>
+      <div class="form-group">
+        <label for="paid_amount">Paid Amount</label>
+        <input
+          type="number"
+          id="paid_amount"
+          v-model="form.paid_amount"
+        />
+      </div>
 
-        <button type="submit" class="btn-submit">💾 Save</button>
-      </form>
-    </div>
+      <button type="submit" class="btn-submit">
+        ✅ Update Salary
+      </button>
+    </form>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-const route = useRoute()
-const router = useRouter()
-const id = route.params.id
+const route = useRoute();
+const router = useRouter();
+const id = route.params.id;
 
-const salary = ref(null)
+const baseUrl = "http://anayet.intelsofts.com/project_app/public/api";
+
 const form = ref({
-  name: '',
-  payment_date: '',
-  employee_administrator_id: '',
-  payment_method_id: '',
-  total_amount: '',
-  paid_amount: ''
-})
+  name: "",
+  payment_date: "",
+  employee_administrator_id: "",
+  payment_method_id: "",
+  total_amount: "",
+  paid_amount: "",
+});
+
+const administrators = ref([]);
+const payments = ref([]);
 
 const fetchSalary = async () => {
   try {
-    const res = await fetch(`http://anayet.intelsofts.com/project_app/public/api/employeesalarys/${id}`)
-    const data = await res.json()
+    const res = await fetch(`${baseUrl}/employeesalarys/${id}`);
+    const data = await res.json();
+    const salaryData = data.employeesalary ?? data;
 
-    salary.value = data.employeesalarys ?? data
-
-    form.value.name = salary.value.name ?? ''
-    form.value.payment_date = salary.value.payment_date ?? ''
-    form.value.employee_administrator_id = salary.value.employee_administrator_id ?? ''
-    form.value.payment_method_id = salary.value.payment_method_id ?? ''
-    form.value.total_amount = salary.value.total_amount ?? ''
-    form.value.paid_amount = salary.value.paid_amount ?? ''
+    form.value.name = salaryData.name || "";
+    form.value.payment_date = salaryData.payment_date || "";
+    form.value.employee_administrator_id = salaryData.employee_administrator_id || "";
+    form.value.payment_method_id = salaryData.payment_method_id || "";
+    form.value.total_amount = salaryData.total_amount || "";
+    form.value.paid_amount = salaryData.paid_amount || "";
   } catch (err) {
-    alert('Error loading data')
-    router.push('/employeesalarys')
+    console.error("Error fetching salary:", err);
+    alert("Error loading salary data.");
   }
-}
+};
 
-const updateSalary = async () => {
+const fetchAdministrators = async () => {
   try {
-    const res = await fetch(`http://anayet.intelsofts.com/project_app/public/api/employeesalarys/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(form.value)
-    })
-
-    if (!res.ok) throw new Error('Failed to update')
-    alert('✅ Salary updated successfully')
-    router.push('/employeesalarys')
+    const res = await fetch(`${baseUrl}/administrators`);
+    if (!res.ok) throw new Error("Failed to fetch administrators");
+    const data = await res.json();
+    administrators.value = data.data || data || [];
   } catch (err) {
-    alert('❌ Update failed')
+    console.error("Error loading administrators:", err);
+    administrators.value = [];
   }
-}
+};
 
-onMounted(fetchSalary)
+const fetchPayments = async () => {
+  try {
+    const res = await fetch(`${baseUrl}/paymentmethods`);
+    const data = await res.json();
+    payments.value = data.data || data || [];
+  } catch (err) {
+    console.error("Error loading payment methods:", err);
+    payments.value = [];
+  }
+};
+
+const handleSubmit = async () => {
+  try {
+    const res = await fetch(`${baseUrl}/employeesalarys/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(form.value),
+    });
+
+    if (!res.ok) throw new Error("Failed to update salary");
+
+    alert("✅ Salary updated successfully!");
+    router.push("/employeesalarys");
+  } catch (err) {
+    console.error("Update error:", err);
+    alert("❌ Failed to update salary.");
+  }
+};
+
+onMounted(() => {
+  fetchSalary();
+  fetchAdministrators();
+  fetchPayments();
+});
 </script>
 
 <style scoped>
 .form-container {
   max-width: 1200px;
   margin: 40px auto;
-  background: #ffffff;
   padding: 30px 40px;
+  background-color: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   font-family: 'Segoe UI', sans-serif;
 }
 .form-container h2 {
   text-align: center;
-  margin-bottom: 25px;
-  color: #005792;
+  margin-bottom: 30px;
+  color: #198754;
+  font-weight: bold;
 }
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
-label {
+.form-group label {
   font-weight: 600;
   display: block;
-  margin-bottom: 8px;
-  color: #333;
+  margin-bottom: 10px;
+  color: #212529;
 }
-input[type="text"],
-input[type="date"] {
+.form-group input,
+.form-group select {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 15px;
-}
-.btn-submit {
-  background-color: #005792;
-  color: white;
-  padding: 12px 20px;
-  border: none;
+  padding: 12px;
+  border: 1px solid #ced4da;
   border-radius: 8px;
   font-size: 16px;
+  background-color: #fefefe;
+}
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #198754;
+  outline: none;
+  background-color: #fff;
+}
+.btn-submit {
+  display: block;
+  width: 200px;
+  margin: 0 auto;
+  padding: 12px;
+  font-size: 16px;
+  background-color: #198754;
+  color: white;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
 }
 .btn-submit:hover {
-  background-color: #003f66;
+  background-color: #157347;
 }
 .btn-back {
   display: inline-block;
-  margin: 20px auto 10px 40px;
-  text-decoration: none;
-  background-color: #28a745;
+  margin-bottom: 30px;
+  background-color: #198754;
   color: white;
-  padding: 10px 16px;
+  font-weight: 600;
+  padding: 8px 20px;
   border-radius: 8px;
-  font-size: 15px;
+  text-decoration: none;
 }
 .btn-back:hover {
-  background-color: #218838;
+  background-color: #157347;
+  color: #fff;
 }
 </style>

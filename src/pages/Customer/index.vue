@@ -1,40 +1,46 @@
 <template>
-  <div class="customer-container">
-    <div class="top-bar">
-      <h1>Manage Customers</h1>
-      <router-link class="btn btn-primary" to="/customers/create">+ New Customer</router-link>
-    </div>
+  <div class="container mt-4">
+    <router-link to="/customers/create" class="btn btn-info mb-3 fw-bold">
+      + New Customer
+    </router-link>
 
     <div class="table-responsive">
-      <table class="table customer-table">
-        <thead>
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="text-white" style="background: linear-gradient(to right, #0d6efd, #3b82f6)">
           <tr>
             <th>ID</th>
-            <th>Photo</th>
             <th>Name</th>
             <th>Mobile</th>
             <th>Email</th>
-            <th>Actions</th>
+            <th>Address</th>
+            <th>Photo</th>
+            <th style="width: 180px">Action</th>
           </tr>
         </thead>
         <tbody>
+          <tr v-if="customers.length === 0">
+            <td colspan="7" class="text-center text-muted fw-bold py-4">No customers found.</td>
+          </tr>
           <tr v-for="customer in customers" :key="customer.id">
             <td>{{ customer.id }}</td>
-            <td>
-              <img
-                :src="`http://anayet.intelsofts.com/project_app/public/img/${customer.photo}`"
-                alt="Photo"
-                class="customer-photo"
-              />
-            </td>
             <td>{{ customer.name }}</td>
             <td>{{ customer.mobile }}</td>
             <td>{{ customer.email }}</td>
+            <td>{{ customer.address }}</td>
+            <td>
+              <img
+                v-if="customer.photo"
+                :src="`${imageBaseUrl}${customer.photo}`"
+                :alt="customer.name"
+                style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%"
+              />
+              <span v-else class="text-muted">No Photo</span>
+            </td>
             <td>
               <div class="btn-group">
-                <router-link :to="`/customers/${customer.id}`" class="btn btn-info btn-sm">View</router-link>
-                <router-link :to="`/customers/${customer.id}/edit`" class="btn btn-warning btn-sm">Edit</router-link>
-                <router-link :to="`/customers/delete/${customer.id}`" class="btn btn-danger btn-sm">Delete</router-link>
+                <router-link :to="`/customers/${customer.id}/edit`" class="btn btn-primary btn-sm">Edit</router-link>
+                <router-link :to="`/customers/${customer.id}`" class="btn btn-success btn-sm">View</router-link>
+                <router-link :to="`/customers/${customer.id}/confirm`" class="btn btn-warning btn-sm">Delete</router-link>
               </div>
             </td>
           </tr>
@@ -45,105 +51,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-const customers = ref([]);
+const customers = ref([])
+const imageBaseUrl = 'http://anayet.intelsofts.com/project_app/public/uploads/customers/'
 
-const baseUrl = `http://anayet.intelsofts.com/project_app/public/api/`;
-const endpoint = `customers`;
-
-onMounted(async () => {
+const fetchCustomers = async () => {
   try {
-    const response = await fetch(`${baseUrl}${endpoint}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-    });
-
-    const c = await response.json();
-    customers.value = c.customers;
-    console.log(c.customers);
-  } catch (err) {
-    console.error('Fetch Error:', err);
-    throw err;
+    const res = await fetch('http://anayet.intelsofts.com/project_app/public/api/customers')
+    const data = await res.json()
+    customers.value = data.customers || []
+  } catch (error) {
+    console.error('Failed to fetch customers', error)
   }
-});
+}
+
+onMounted(() => {
+  fetchCustomers()
+})
 </script>
-
-<style scoped>
-.customer-container {
-  max-width: 1200px;
-  margin: 40px auto;
-  padding: 30px;
-  background: #f7f9fc;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.top-bar h1 {
-  color: #0d6efd;
-  font-size: 26px;
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-.customer-table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: #ffffff;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.customer-table th {
-  background-color: #0d6efd;
-  color: #ffffff;
-  padding: 14px;
-  font-size: 15px;
-  text-align: center;
-}
-
-.customer-table td {
-  padding: 12px;
-  text-align: center;
-  font-size: 14px;
-  border-bottom: 1px solid #ddd;
-}
-
-.customer-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-.customer-table tr:hover {
-  background-color: #eef6ff;
-}
-
-.customer-photo {
-  height: 80px;
-  width: 80px;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 2px solid #dee2e6;
-}
-
-.btn-group .btn {
-  margin-right: 5px;
-}
-
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 13px;
-  border-radius: 6px;
-}
-</style>

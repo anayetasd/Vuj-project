@@ -5,7 +5,6 @@
     <p>Are you sure you want to delete this production?</p>
 
     <h2>Production Date: {{ production.production_date }}</h2>
-    <h2>Product Name: {{ production.product?.name || 'no name' }}</h2>
     <h2>Total Produced: {{ production.quantity_produced }}</h2>
 
     <button class="btn btn-danger" @click="handleDelete">Confirm Delete</button>

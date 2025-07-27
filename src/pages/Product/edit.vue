@@ -32,15 +32,6 @@
           <input v-model="form.barcode" type="text" class="form-control" />
         </div>
 
-        <div class="mb-4">
-          <label class="form-label">Product Section</label>
-          <select v-model="form.product_section_id" class="form-select">
-            <option v-for="section in sections" :key="section.id" :value="section.id">
-              {{ section.name }}
-            </option>
-          </select>
-        </div>
-
         <button type="submit" class="btn btn-primary w-100">💾 Update Product</button>
       </form>
     </div>
@@ -56,14 +47,12 @@ const router = useRouter()
 
 const productId = route.params.id
 const product = ref({})
-const sections = ref([])
 const form = ref({
   name: '',
   photo: null,
   regular_price: '',
   offer_price: '',
   barcode: '',
-  product_section_id: ''
 })
 
 const baseURL = 'http://anayet.intelsofts.com/project_app/public/api'
@@ -78,13 +67,7 @@ const fetchProduct = async () => {
     regular_price: data.product.regular_price,
     offer_price: data.product.offer_price,
     barcode: data.product.barcode,
-    product_section_id: data.product.product_section_id
   }
-}
-
-const fetchSections = async () => {
-  const res = await fetch(`${baseURL}/product-sections`)
-  sections.value = await res.json()
 }
 
 const handleFileChange = (e) => {
@@ -110,7 +93,6 @@ const handleSubmit = async () => {
 
 onMounted(() => {
   fetchProduct()
-  fetchSections()
 })
 </script>
 

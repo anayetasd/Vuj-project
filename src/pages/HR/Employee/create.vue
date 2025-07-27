@@ -39,7 +39,7 @@
 
       <div class="form-group">
         <label for="phone">Phone</label>
-        <input v-model="form.phone" type="number" id="phone" />
+        <input v-model="form.phone" type="text" id="phone" required />
       </div>
 
       <div class="form-group">
@@ -72,43 +72,67 @@ const handleFileUpload = (e) => {
   photoFile.value = e.target.files[0];
 };
 
-const fetchDropdownData = async () => {
-  const [shiftRes, categoryRes] = await Promise.all([
-    fetch('/api/employeeshifts'),
-    fetch('/api/employeecategories')
-  ]);
+const baseUrl = 'http://anayet.intelsofts.com/project_app/public/api';
 
-  shifts.value = await shiftRes.json();
-  categories.value = await categoryRes.json();
+const fetchDropdownData = async () => {
+  try {
+    const [shiftRes, categoryRes] = await Promise.all([
+      fetch(`${baseUrl}/employeeshifts`),
+      fetch(`${baseUrl}/employeecategories`)
+    ]);
+
+    const shiftData = await shiftRes.json();
+    const categoryData = await categoryRes.json();
+
+    shifts.value = shiftData.shifts ?? shiftData;
+    categories.value = categoryData.categories ?? categoryData;
+  } catch (err) {
+    console.error("Dropdown fetch error:", err);
+  }
 };
 
+
 const submitEmployee = async () => {
+  console.log("📞 Sending phone number:", form.value.phone); // Debugging line
+
   const formData = new FormData();
   formData.append('name', form.value.name);
   formData.append('employeeshift_id', form.value.employeeshift_id);
   formData.append('employee_categorie_id', form.value.employee_categorie_id);
   formData.append('joining_date', form.value.joining_date);
-  formData.append('phone', form.value.phone);
+  formData.append('phone', form.value.phone ?? '');  // fallback to empty string
   formData.append('address', form.value.address);
   if (photoFile.value) {
     formData.append('photo', photoFile.value);
   }
 
   try {
-    const res = await fetch('http://anayet.intelsofts.com/project_app/public/api/employees', {
+    const res = await fetch(`${baseUrl}/employees`, {
       method: 'POST',
       body: formData
     });
 
     const data = await res.json();
+
     if (res.ok) {
-      alert('Employee added successfully');
+      alert('✅ Employee added successfully!');
+      setTimeout(() => router.push('/employees'), 1000);
+      // Optional: Reset form
+      form.value = {
+        name: '',
+        employeeshift_id: '',
+        employee_categorie_id: '',
+        joining_date: '',
+        phone: '',
+        address: ''
+      };
+      photoFile.value = null;
     } else {
-      alert('Error: ' + JSON.stringify(data));
+      alert('❌ Error: ' + JSON.stringify(data));
     }
   } catch (err) {
-    alert('Server error');
-    console.error(err);
+    alert('❌ Server error. Please try again.');
+    console.error('Error submitting employee:', err);
   }
 };
 

@@ -32,7 +32,7 @@ export default {
   methods: {
     async submitForm() {
       try {
-        const response = await fetch("http://anayet.intelsofts.com/project_app/public/api/rawMaterials", {
+        const response = await fetch("http://anayet.intelsofts.com/project_app/public/api/rawmaterials", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
